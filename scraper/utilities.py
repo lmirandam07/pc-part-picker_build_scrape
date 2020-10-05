@@ -1,9 +1,27 @@
-from random import choice
+import requests
+from decouple import config
 from selenium import webdriver
 from selenium.webdriver.firefox.options import Options
 
+
 def get_proxies():
-    pass
+    API_KEY = config('KEY')
+    proxies = []
+    response = requests.get("https://proxy.webshare.io/api/proxy/list/",
+                            headers={"Authorization": f"Token {API_KEY}"})
+    data = response.json()['results']
+    unpack = lambda username, password, proxy_address, ports, **kw: (
+        username, password, proxy_address, ports['http'])
+
+    for proxy_dict in data:
+        user, passw, proxy, port = unpack(**proxy_dict)
+        proxy = {
+            'http': f'http://{user}:{passw}@{proxy}:{port}/'
+        }
+        proxies.append(proxy)
+
+
+    return proxies
 
 
 def get_user_agent():
@@ -59,9 +77,10 @@ def get_user_agent():
         }
     ]
 
-    return choice(user_agents)
+    return user_agents
 
-def get_driver(proxy=None, user_agent=None):
+
+def get_driver(user_agent=None, proxy=None):
     options = Options()
     options.headless = True
 
@@ -72,10 +91,13 @@ def get_driver(proxy=None, user_agent=None):
 
     firefox_profile = webdriver.FirefoxProfile()
     firefox_profile.set_preference('permissions.default.image', 2)
-    firefox_profile.set_preference('dom.ipc.plugins.enabled.libflashplayer.so', 'false')
-    browser = webdriver.Firefox(options=options, firefox_profile=firefox_profile)
+    firefox_profile.set_preference(
+        'dom.ipc.plugins.enabled.libflashplayer.so', 'false')
+    browser = webdriver.Firefox(
+        options=options, firefox_profile=firefox_profile)
 
     return browser
+
 
 def parse_url(page=1, low_range=250, up_range=5000, build_link=None):
     base_url = 'https://pcpartpicker.com'
