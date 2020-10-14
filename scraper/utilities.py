@@ -3,7 +3,6 @@ from decouple import config
 from selenium import webdriver
 from selenium.webdriver.firefox.options import Options
 
-
 def get_proxies():
     API_KEY = config('KEY')
     proxies = []
@@ -19,7 +18,6 @@ def get_proxies():
             'http': f'http://{user}:{passw}@{proxy}:{port}/'
         }
         proxies.append(proxy)
-
 
     return proxies
 
@@ -107,3 +105,4 @@ def parse_url(page=1, low_range=250, up_range=5000, build_link=None):
         fragment = f'{build_link}'
 
     return f'{base_url}{fragment}'
+
