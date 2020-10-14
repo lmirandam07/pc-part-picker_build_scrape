@@ -1,27 +1,43 @@
 import os
-import time
 import json
+import time
 import utilities
 import traceback
 from random import choice, randint
 from bs4 import BeautifulSoup
 
-def get_links():
-    file_name = 'builds.json'
-    if os.path.exists(f'./{file_name}'):
-        with open(f'{file_name}', 'r') as f:
-            data = json.load(f)
-    else:
-        return None
+FILE_NAME = 'builds.json'
 
-    return data if len(data) > 0 else None
+links_format = lambda links: [{'Build Link': link} for link in links]
+
+def save_links(links):
+    if not os.path.exists(f'./{FILE_NAME}'):
+            # Save build href in a json file
+            with open(f'{FILE_NAME}', 'w') as f:
+                json.dump(links, f, indent=4)
+
+    else:
+        # Only save the new links
+        with open(f'{FILE_NAME}', 'r') as f:
+            old_data = json.load(f)
+
+        old_links = [l['Build Link'] for l in old_data if l]
+        #  Get the difference between new scraped links and scraped old links
+        links_diff = set([l['Build Link'] for l in links])
+        links_diff.difference_update(old_links)
+
+        if links_diff:
+            new_links = links_format(links_diff)
+            all_data = new_links + old_data
+
+            # print(len(new_links), len(all_data), all_data[10:30])
+            with open(f'{FILE_NAME}', 'w') as f:
+                json.dump(all_data, f, indent=4)
 
 def scrape_links():
-    num_pages = 1
+    num_pages = 5
     user_agents = utilities.get_user_agent()
     proxies = utilities.get_proxies()
-    file_name = 'builds.json'
-    links_format = lambda links: [{'link': link} for link in links]
     links_scraped = []
     for i in range(1, num_pages+1):
         try:
@@ -43,25 +59,10 @@ def scrape_links():
             print(traceback.format_exc())
             continue
 
-    if not os.path.exists(f'./{file_name}'):
-        # Save build href in a json file
-        with open(f'{file_name}', 'w') as f:
-            json.dump(links_scraped, f, indent=2)
+    save_links(links_scraped)
 
-    else:
-        # Only save the new links
-        with open(f'{file_name}', 'r+') as f:
-            old_links = json.load(f)
-            old_links = [l['link'] for l in old_links]
-            #  Get the difference between scraped links and scraped old links
-            links_diff = set([l['link'] for l in links_scraped])
-            links_diff.difference_update(old_links)
+    return True
 
-            if links_diff:
-                f.seek(0)
-                new_links = links_format([*links_diff, *old_links])
-                del old_links
-                json.dump(new_links, f, indent=2)
 
 if __name__ == '__main__':
     scrape_links()
