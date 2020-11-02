@@ -1,3 +1,4 @@
+import os
 import time
 import json
 import requests
@@ -56,6 +57,16 @@ def save_build(build, pos):
 
         with open(f'{FILE_NAME}', 'w') as f:
             json.dump(builds, f, indent=4)
+
+def remove_empty_builds():
+    with open(f'{FILE_NAME}', 'r+') as f:
+        builds = json.load(f)
+
+    cleaned_builds = [b for b in builds if b != {}]
+
+    with open(f'{FILE_NAME}', 'w') as f:
+        json.dump(cleaned_builds, f, indent=4)
+
 
 
 def build_scraper(url, user_agent, proxy):
@@ -156,9 +167,12 @@ def main():
         except Exception as e:
             print(traceback.format_exc(), build)
             continue
+
+    remove_empty_builds()
     build_amount = get_builds_amount()
     return build_amount
 
 
 if __name__ == '__main__':
-    main()
+    builds_amount = main()
+    print(builds_amount)
